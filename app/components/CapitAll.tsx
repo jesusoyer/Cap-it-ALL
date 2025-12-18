@@ -58,6 +58,15 @@ export default function AutoCapsClipboard() {
     setCopied(true);
   }
 
+  // 🔹 New: trim to 100 chars and auto-copy
+  function handleTrimTo100() {
+    if (!value) return;
+    const trimmed = value.slice(0, 100); // first 100 characters
+    setValue(trimmed);
+    copyToClipboardSafe(trimmed);
+    setCopied(true);
+  }
+
   function handleClear() {
     setValue("");
     setCopied(false);
@@ -73,7 +82,7 @@ export default function AutoCapsClipboard() {
   // Keyboard shortcut: Ctrl+Shift+K toggles floating mini window
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
-      // Ctrl + Shift + K (you can change 'k' to something else)
+      // Ctrl + Shift + K
       if (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === "k") {
         e.preventDefault();
         setIsFloating((prev) => !prev);
@@ -137,6 +146,21 @@ export default function AutoCapsClipboard() {
             Clear
           </button>
 
+          {/* New trim button in mini view */}
+          <button
+            type="button"
+            onClick={handleTrimTo100}
+            disabled={!value}
+            className={`px-2 py-1 rounded-lg text-[11px] font-medium border
+              ${
+                !value
+                  ? "border-gray-200 text-gray-300 cursor-not-allowed bg-gray-50"
+                  : "border-gray-300 text-gray-700 hover:bg-gray-100"
+              }`}
+          >
+            Trim to 100
+          </button>
+
           <button
             type="button"
             onClick={handleCopyClick}
@@ -198,6 +222,21 @@ export default function AutoCapsClipboard() {
             }`}
         >
           Clear
+        </button>
+
+        {/* New trim button in full view */}
+        <button
+          type="button"
+          onClick={handleTrimTo100}
+          disabled={!value}
+          className={`px-3 py-1.5 rounded-lg text-[11px] font-medium border
+            ${
+              !value
+                ? "border-gray-200 text-gray-300 cursor-not-allowed bg-gray-50"
+                : "border-gray-300 text-gray-700 hover:bg-gray-100"
+            }`}
+        >
+          Trim to 100
         </button>
 
         <button
