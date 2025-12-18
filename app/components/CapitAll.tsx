@@ -26,50 +26,92 @@ function copyToClipboardSafe(text: string) {
       document.execCommand("copy");
       document.body.removeChild(textarea);
     } catch {
-      // if even this fails, we quietly give up
+      // quietly give up if this fails too
     }
   }
+}
+
+interface Snippet {
+  id: number;
+  text: string; // ALWAYS ALL CAPS
 }
 
 export default function AutoCapsClipboard() {
   const [value, setValue] = useState("");
   const [copied, setCopied] = useState(false);
   const [isFloating, setIsFloating] = useState(false);
+  const [snippets, setSnippets] = useState<Snippet[]>([]);
 
-  // Handle typing/pasting → ALL CAPS + auto-copy
+  // helper to add a snippet (max 10) + copy
+  function addSnippet(raw: string) {
+    const trimmed = raw.trim();
+    if (!trimmed) return;
+    const upper = trimmed.toUpperCase();
+
+    setSnippets((prev) => {
+      const next: Snippet[] = [
+        { id: Date.now() + Math.random(), text: upper },
+        ...prev,
+      ];
+      return next.slice(0, 10); // keep latest 10
+    });
+
+    copyToClipboardSafe(upper);
+    setCopied(true);
+  }
+
+  // Handle typing/pasting → ALL CAPS
+  // If this is the first non-empty input (initial paste / type),
+  // it ALSO gets added to history + copied.
   function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
     const raw = e.target.value;
     const upper = raw.toUpperCase();
+    const prevValue = value; // previous state
 
     setValue(upper);
-    if (upper) {
+
+    if (!upper) {
+      setCopied(false);
+      return;
+    }
+
+    if (!prevValue) {
+      // initial non-empty entry → treat as "first snippet"
+      addSnippet(upper);
+    } else {
+      // subsequent edits → just auto-copy, don't flood history
       copyToClipboardSafe(upper);
       setCopied(true);
-    } else {
-      setCopied(false);
     }
   }
 
   function handleCopyClick() {
     if (!value) return;
-    const upper = value.toUpperCase();
-    setValue(upper);
-    copyToClipboardSafe(upper);
-    setCopied(true);
+    addSnippet(value); // also copies + adds to history
   }
 
-  // 🔹 New: trim to 100 chars and auto-copy
+  // Trim to 100 chars and add to history
   function handleTrimTo100() {
     if (!value) return;
-    const trimmed = value.slice(0, 100); // first 100 characters
+    const trimmed = value.slice(0, 100);
     setValue(trimmed);
-    copyToClipboardSafe(trimmed);
-    setCopied(true);
+    addSnippet(trimmed); // also copies + adds to history
   }
 
   function handleClear() {
     setValue("");
     setCopied(false);
+  }
+
+  function handleCopySnippet(id: number) {
+    const snip = snippets.find((s) => s.id === id);
+    if (!snip) return;
+    copyToClipboardSafe(snip.text);
+    setCopied(true);
+  }
+
+  function handleClearSnippet(id: number) {
+    setSnippets((prev) => prev.filter((s) => s.id !== id));
   }
 
   // Small timeout to hide "Copied!" after a moment
@@ -98,8 +140,8 @@ export default function AutoCapsClipboard() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
 
+  // ---------- Floating mini view ----------
   if (isFloating) {
-    // 🔹 Mini floating version in top-right
     return (
       <div className="fixed top-3 right-3 z-50 w-80 border rounded-xl bg-white shadow-lg p-3 text-xs space-y-2">
         <div className="flex items-center justify-between gap-2">
@@ -146,7 +188,6 @@ export default function AutoCapsClipboard() {
             Clear
           </button>
 
-          {/* New trim button in mini view */}
           <button
             type="button"
             onClick={handleTrimTo100}
@@ -176,6 +217,38 @@ export default function AutoCapsClipboard() {
           </button>
         </div>
 
+        {/* Recent snippets – compact list */}
+        {snippets.length > 0 && (
+          <div className="mt-2 space-y-1 max-h-40 overflow-auto">
+            {snippets.map((snip) => (
+              <div
+                key={snip.id}
+                className="border rounded-lg bg-gray-50 px-2 py-1.5 flex items-start justify-between gap-2"
+              >
+                <div className="font-mono text-[10px] text-gray-800 break-words">
+                  {snip.text}
+                </div>
+                <div className="flex flex-col items-end gap-1">
+                  <button
+                    type="button"
+                    onClick={() => handleCopySnippet(snip.id)}
+                    className="px-2 py-0.5 rounded text-[9px] border border-gray-300 hover:bg-gray-100"
+                  >
+                    Copy
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleClearSnippet(snip.id)}
+                    className="text-[10px] text-gray-400 hover:text-red-500"
+                  >
+                    ✕
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
         <div className="text-[9px] text-gray-400 text-right">
           Ctrl + Shift + K to toggle
         </div>
@@ -183,7 +256,7 @@ export default function AutoCapsClipboard() {
     );
   }
 
-  // 🔹 Normal inline full card version
+  // ---------- Full inline card view ----------
   return (
     <div className="w-full max-w-md border rounded-xl bg-white shadow-sm p-4 text-xs space-y-3">
       <div className="flex items-center justify-between gap-2">
@@ -224,7 +297,6 @@ export default function AutoCapsClipboard() {
           Clear
         </button>
 
-        {/* New trim button in full view */}
         <button
           type="button"
           onClick={handleTrimTo100}
@@ -253,6 +325,38 @@ export default function AutoCapsClipboard() {
           Copy again
         </button>
       </div>
+
+      {/* Recent snippets list */}
+      {snippets.length > 0 && (
+        <div className="mt-3 space-y-2 max-h-56 overflow-auto">
+          {snippets.map((snip) => (
+            <div
+              key={snip.id}
+              className="border rounded-lg bg-gray-50 px-3 py-2 flex items-start justify-between gap-3"
+            >
+              <div className="font-mono text-[11px] text-gray-800 break-words">
+                {snip.text}
+              </div>
+              <div className="flex flex-col items-end gap-1">
+                <button
+                  type="button"
+                  onClick={() => handleCopySnippet(snip.id)}
+                  className="px-2 py-0.5 rounded text-[10px] border border-gray-300 hover:bg-gray-100"
+                >
+                  Copy
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleClearSnippet(snip.id)}
+                  className="text-[11px] text-gray-400 hover:text-red-500"
+                >
+                  ✕
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
 
       <div className="text-[10px] text-gray-400 text-right">
         Press <span className="font-semibold">Ctrl + Shift + K</span> to pop out mini helper
