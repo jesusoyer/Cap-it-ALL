@@ -114,6 +114,11 @@ export default function AutoCapsClipboard() {
     setSnippets((prev) => prev.filter((s) => s.id !== id));
   }
 
+  // 🔹 NEW: clear all snippets/history
+  function handleClearAllSnippets() {
+    setSnippets([]);
+  }
+
   // Small timeout to hide "Copied!" after a moment
   useEffect(() => {
     if (!copied) return;
@@ -219,34 +224,47 @@ export default function AutoCapsClipboard() {
 
         {/* Recent snippets – compact list */}
         {snippets.length > 0 && (
-          <div className="mt-2 space-y-1 max-h-40 overflow-auto">
-            {snippets.map((snip) => (
-              <div
-                key={snip.id}
-                className="border rounded-lg bg-gray-50 px-2 py-1.5 flex items-start justify-between gap-2"
+          <>
+            <div className="mt-2 space-y-1 max-h-40 overflow-auto">
+              {snippets.map((snip) => (
+                <div
+                  key={snip.id}
+                  className="border rounded-lg bg-gray-50 px-2 py-1.5 flex items-start justify-between gap-2"
+                >
+                  <div className="font-mono text-[10px] text-gray-800 break-words">
+                    {snip.text}
+                  </div>
+                  <div className="flex flex-col items-end gap-1">
+                    <button
+                      type="button"
+                      onClick={() => handleCopySnippet(snip.id)}
+                      className="px-2 py-0.5 rounded text-[9px] border border-gray-300 hover:bg-gray-100"
+                    >
+                      Copy
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleClearSnippet(snip.id)}
+                      className="text-[10px] text-gray-400 hover:text-red-500"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Clear all snippets button (floating) */}
+            <div className="mt-1 flex justify-end">
+              <button
+                type="button"
+                onClick={handleClearAllSnippets}
+                className="text-[9px] px-2 py-0.5 border border-gray-300 rounded-lg text-gray-600 hover:bg-gray-100"
               >
-                <div className="font-mono text-[10px] text-gray-800 break-words">
-                  {snip.text}
-                </div>
-                <div className="flex flex-col items-end gap-1">
-                  <button
-                    type="button"
-                    onClick={() => handleCopySnippet(snip.id)}
-                    className="px-2 py-0.5 rounded text-[9px] border border-gray-300 hover:bg-gray-100"
-                  >
-                    Copy
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleClearSnippet(snip.id)}
-                    className="text-[10px] text-gray-400 hover:text-red-500"
-                  >
-                    ✕
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
+                Clear history
+              </button>
+            </div>
+          </>
         )}
 
         <div className="text-[9px] text-gray-400 text-right">
@@ -328,34 +346,47 @@ export default function AutoCapsClipboard() {
 
       {/* Recent snippets list */}
       {snippets.length > 0 && (
-        <div className="mt-3 space-y-2 max-h-56 overflow-auto">
-          {snippets.map((snip) => (
-            <div
-              key={snip.id}
-              className="border rounded-lg bg-gray-50 px-3 py-2 flex items-start justify-between gap-3"
+        <>
+          <div className="mt-3 space-y-2 max-h-56 overflow-auto">
+            {snippets.map((snip) => (
+              <div
+                key={snip.id}
+                className="border rounded-lg bg-gray-50 px-3 py-2 flex items-start justify-between gap-3"
+              >
+                <div className="font-mono text-[11px] text-gray-800 break-words">
+                  {snip.text}
+                </div>
+                <div className="flex flex-col items-end gap-1">
+                  <button
+                    type="button"
+                    onClick={() => handleCopySnippet(snip.id)}
+                    className="px-2 py-0.5 rounded text-[10px] border border-gray-300 hover:bg-gray-100"
+                  >
+                    Copy
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleClearSnippet(snip.id)}
+                    className="text-[11px] text-gray-400 hover:text-red-500"
+                  >
+                    ✕
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Clear all snippets button (full view) */}
+          <div className="mt-1 flex justify-end">
+            <button
+              type="button"
+              onClick={handleClearAllSnippets}
+              className="px-3 py-1 rounded-lg text-[10px] border border-gray-300 text-gray-600 hover:bg-gray-100"
             >
-              <div className="font-mono text-[11px] text-gray-800 break-words">
-                {snip.text}
-              </div>
-              <div className="flex flex-col items-end gap-1">
-                <button
-                  type="button"
-                  onClick={() => handleCopySnippet(snip.id)}
-                  className="px-2 py-0.5 rounded text-[10px] border border-gray-300 hover:bg-gray-100"
-                >
-                  Copy
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleClearSnippet(snip.id)}
-                  className="text-[11px] text-gray-400 hover:text-red-500"
-                >
-                  ✕
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
+              Clear snippets
+            </button>
+          </div>
+        </>
       )}
 
       <div className="text-[10px] text-gray-400 text-right">
